@@ -1,0 +1,9 @@
+# SQLite write-ahead files appear next to any database the service opens
+*.db-wal
+*.db-shm
+*.db-journal
+
+# local builds and scratch databases
+/meterd
+/tmp/
+*.local.db
