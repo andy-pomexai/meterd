@@ -12,6 +12,7 @@ type Event struct {
 	TenantID     string
 	Model        string
 	InputTokens  int64
+	CachedTokens int64
 	OutputTokens int64
 	CostMicros   int64
 	OccurredAt   time.Time // when the upstream request completed
@@ -22,10 +23,10 @@ type Event struct {
 // InsertEvent stores an event.
 func (s *Store) InsertEvent(ctx context.Context, e Event) error {
 	_, err := s.db.ExecContext(ctx, `
-		INSERT INTO events (event_id, tenant_id, model, input_tokens, output_tokens,
+		INSERT INTO events (event_id, tenant_id, model, input_tokens, cached_tokens, output_tokens,
 		                    cost_micros, occurred_at, received_at, billing_day)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		e.EventID, e.TenantID, e.Model, e.InputTokens, e.OutputTokens,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		e.EventID, e.TenantID, e.Model, e.InputTokens, e.CachedTokens, e.OutputTokens,
 		e.CostMicros, formatTime(e.OccurredAt), formatTime(e.ReceivedAt), e.BillingDay)
 	return err
 }

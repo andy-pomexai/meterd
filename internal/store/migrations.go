@@ -43,6 +43,10 @@ var migrations = []string{
 
 	// 3: support looks single events up by id when a tenant disputes a request
 	`CREATE INDEX events_event_id ON events (event_id);`,
+
+	// 4: cached prompt tokens (PR #1)
+	`ALTER TABLE events ADD COLUMN cached_tokens INTEGER;
+	ALTER TABLE daily_usage ADD COLUMN cached_tokens INTEGER;`,
 }
 
 func (s *Store) migrate(ctx context.Context) error {

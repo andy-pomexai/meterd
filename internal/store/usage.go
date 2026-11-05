@@ -12,6 +12,7 @@ type DailyUsage struct {
 	Model        string `json:"model"`
 	Requests     int64  `json:"requests"`
 	InputTokens  int64  `json:"input_tokens"`
+	CachedTokens int64  `json:"cached_tokens"`
 	OutputTokens int64  `json:"output_tokens"`
 	CostMicros   int64  `json:"cost_micros"`
 }
@@ -34,11 +35,12 @@ func (s *Store) AddDailyUsage(ctx context.Context, deltas []DailyUsage) error {
 	defer tx.Rollback()
 
 	stmt, err := tx.PrepareContext(ctx, `
-		INSERT INTO daily_usage (tenant_id, billing_day, model, requests, input_tokens, output_tokens, cost_micros)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO daily_usage (tenant_id, billing_day, model, requests, input_tokens, cached_tokens, output_tokens, cost_micros)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT (tenant_id, billing_day, model) DO UPDATE SET
 			requests      = requests + excluded.requests,
 			input_tokens  = input_tokens + excluded.input_tokens,
+			cached_tokens = cached_tokens + excluded.cached_tokens,
 			output_tokens = output_tokens + excluded.output_tokens,
 			cost_micros   = cost_micros + excluded.cost_micros`)
 	if err != nil {
@@ -48,7 +50,7 @@ func (s *Store) AddDailyUsage(ctx context.Context, deltas []DailyUsage) error {
 
 	for _, d := range deltas {
 		if _, err := stmt.ExecContext(ctx, d.TenantID, d.BillingDay, d.Model,
-			d.Requests, d.InputTokens, d.OutputTokens, d.CostMicros); err != nil {
+			d.Requests, d.InputTokens, d.CachedTokens, d.OutputTokens, d.CostMicros); err != nil {
 			return err
 		}
 	}
@@ -60,7 +62,7 @@ func (s *Store) AddDailyUsage(ctx context.Context, deltas []DailyUsage) error {
 // nil, only rows strictly after that position are returned.
 func (s *Store) ListDailyUsage(ctx context.Context, tenantID, from, to string, after *Position, limit int) ([]DailyUsage, error) {
 	query := `
-		SELECT tenant_id, billing_day, model, requests, input_tokens, output_tokens, cost_micros
+		SELECT tenant_id, billing_day, model, requests, input_tokens, cached_tokens, output_tokens, cost_micros
 		FROM daily_usage
 		WHERE tenant_id = ? AND billing_day >= ? AND billing_day <= ?`
 	args := []any{tenantID, from, to}
@@ -81,7 +83,7 @@ func (s *Store) ListDailyUsage(ctx context.Context, tenantID, from, to string, a
 	for rows.Next() {
 		var u DailyUsage
 		if err := rows.Scan(&u.TenantID, &u.BillingDay, &u.Model,
-			&u.Requests, &u.InputTokens, &u.OutputTokens, &u.CostMicros); err != nil {
+			&u.Requests, &u.InputTokens, &u.CachedTokens, &u.OutputTokens, &u.CostMicros); err != nil {
 			return nil, err
 		}
 		out = append(out, u)
@@ -104,8 +106,8 @@ func (s *Store) RebuildDailyUsage(ctx context.Context, from, to string) error {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `
-		INSERT INTO daily_usage (tenant_id, billing_day, model, requests, input_tokens, output_tokens, cost_micros)
-		SELECT tenant_id, billing_day, model, COUNT(*), SUM(input_tokens), SUM(output_tokens), SUM(cost_micros)
+		INSERT INTO daily_usage (tenant_id, billing_day, model, requests, input_tokens, cached_tokens, output_tokens, cost_micros)
+		SELECT tenant_id, billing_day, model, COUNT(*), SUM(input_tokens), SUM(cached_tokens), SUM(output_tokens), SUM(cost_micros)
 		FROM events
 		WHERE billing_day >= ? AND billing_day <= ?
 		GROUP BY tenant_id, billing_day, model`, from, to); err != nil {
