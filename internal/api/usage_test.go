@@ -39,6 +39,7 @@ func seed(t *testing.T, st *store.Store, tenantID string, days int, models ...st
 				Model:        m,
 				Requests:     int64(d),
 				InputTokens:  int64(1000 * d),
+				CachedTokens: int64(400 * d),
 				OutputTokens: int64(100 * d),
 				CostMicros:   int64(1_250_000 * d),
 			})
@@ -162,11 +163,11 @@ func TestExportCSV(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("export = %d %s", rec.Code, rec.Body)
 	}
-	want := "billing_day,model,requests,input_tokens,output_tokens,cost_usd\n" +
-		"2026-10-01,atlas-large,1,1000,100,1.250000\n" +
-		"2026-10-01,atlas-mini,1,1000,100,1.250000\n" +
-		"2026-10-02,atlas-large,2,2000,200,2.500000\n" +
-		"2026-10-02,atlas-mini,2,2000,200,2.500000\n"
+	want := "billing_day,model,requests,input_tokens,cached_tokens,output_tokens,cost_usd\n" +
+		"2026-10-01,atlas-large,1,1000,400,100,1.250000\n" +
+		"2026-10-01,atlas-mini,1,1000,400,100,1.250000\n" +
+		"2026-10-02,atlas-large,2,2000,800,200,2.500000\n" +
+		"2026-10-02,atlas-mini,2,2000,800,200,2.500000\n"
 	if got := rec.Body.String(); got != want {
 		t.Errorf("export =\n%s\nwant\n%s", got, want)
 	}
