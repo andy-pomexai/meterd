@@ -29,6 +29,7 @@ func (f *fakeSink) AddDailyUsage(_ context.Context, deltas []store.DailyUsage) e
 		u := f.totals[k]
 		u.Requests += d.Requests
 		u.InputTokens += d.InputTokens
+		u.CachedTokens += d.CachedTokens
 		u.OutputTokens += d.OutputTokens
 		u.CostMicros += d.CostMicros
 		f.totals[k] = u

@@ -63,7 +63,7 @@ func TestAddDailyUsageAccumulates(t *testing.T) {
 	s := openTestStore(t)
 	ctx := context.Background()
 
-	row := DailyUsage{TenantID: "t1", BillingDay: "2026-10-14", Model: "atlas-mini", Requests: 2, InputTokens: 300, OutputTokens: 30, CostMicros: 63}
+	row := DailyUsage{TenantID: "t1", BillingDay: "2026-10-14", Model: "atlas-mini", Requests: 2, InputTokens: 300, CachedTokens: 120, OutputTokens: 30, CostMicros: 63}
 	other := DailyUsage{TenantID: "t1", BillingDay: "2026-10-15", Model: "atlas-mini", Requests: 1, InputTokens: 5, OutputTokens: 5, CostMicros: 4}
 	if err := s.AddDailyUsage(ctx, []DailyUsage{row, other}); err != nil {
 		t.Fatal(err)
@@ -77,7 +77,7 @@ func TestAddDailyUsageAccumulates(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []DailyUsage{
-		{TenantID: "t1", BillingDay: "2026-10-14", Model: "atlas-mini", Requests: 4, InputTokens: 600, OutputTokens: 60, CostMicros: 126},
+		{TenantID: "t1", BillingDay: "2026-10-14", Model: "atlas-mini", Requests: 4, InputTokens: 600, CachedTokens: 240, OutputTokens: 60, CostMicros: 126},
 		other,
 	}
 	if !reflect.DeepEqual(got, want) {

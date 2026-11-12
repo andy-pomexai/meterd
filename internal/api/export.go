@@ -15,7 +15,7 @@ import (
 // a time.
 const exportPageSize = 50
 
-var exportHeader = []string{"billing_day", "model", "requests", "input_tokens", "output_tokens", "cost_usd"}
+var exportHeader = []string{"billing_day", "model", "requests", "input_tokens", "cached_tokens", "output_tokens", "cost_usd"}
 
 // Export serves GET /v1/usage/export?tenant_id=&month=YYYY-MM: a tenant's usage
 // for one billing month as CSV, one line per (billing day, model).
@@ -60,6 +60,7 @@ func (h *Handler) Export(w http.ResponseWriter, r *http.Request) {
 			u.Model,
 			strconv.FormatInt(u.Requests, 10),
 			strconv.FormatInt(u.InputTokens, 10),
+			strconv.FormatInt(u.CachedTokens, 10),
 			strconv.FormatInt(u.OutputTokens, 10),
 			formatUSD(u.CostMicros),
 		})

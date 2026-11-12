@@ -52,6 +52,7 @@ type eventJSON struct {
 	TenantID     string `json:"tenant_id"`
 	Model        string `json:"model"`
 	InputTokens  int64  `json:"input_tokens"`
+	CachedTokens int64  `json:"cached_tokens"`
 	OutputTokens int64  `json:"output_tokens"`
 	OccurredAt   string `json:"occurred_at"`
 }
@@ -138,6 +139,8 @@ func (h *Handler) prepare(ctx context.Context, in eventJSON, now time.Time, tena
 		return store.Event{}, invalid("tenant_id is required")
 	case in.InputTokens < 0 || in.InputTokens > maxTokensPerEvent:
 		return store.Event{}, invalid("input_tokens must be between 0 and %d", maxTokensPerEvent)
+	case in.CachedTokens < 0 || in.CachedTokens > maxTokensPerEvent:
+		return store.Event{}, invalid("cached_tokens must be between 0 and %d", maxTokensPerEvent)
 	case in.OutputTokens < 0 || in.OutputTokens > maxTokensPerEvent:
 		return store.Event{}, invalid("output_tokens must be between 0 and %d", maxTokensPerEvent)
 	case !h.prices.Has(in.Model):
@@ -164,7 +167,12 @@ func (h *Handler) prepare(ctx context.Context, in eventJSON, now time.Time, tena
 		tenants[in.TenantID] = tenant
 	}
 
-	cost, err := h.prices.Cost(in.Model, in.InputTokens, in.OutputTokens, tenant.DiscountBps)
+	cost, err := h.prices.CostOf(pricing.Usage{
+		Model:        in.Model,
+		InputTokens:  in.InputTokens,
+		CachedTokens: in.CachedTokens,
+		OutputTokens: in.OutputTokens,
+	})
 	if err != nil {
 		return store.Event{}, err
 	}
@@ -175,6 +183,7 @@ func (h *Handler) prepare(ctx context.Context, in eventJSON, now time.Time, tena
 		TenantID:     tenant.ID,
 		Model:        in.Model,
 		InputTokens:  in.InputTokens,
+		CachedTokens: in.CachedTokens,
 		OutputTokens: in.OutputTokens,
 		CostMicros:   cost,
 		OccurredAt:   occurred,

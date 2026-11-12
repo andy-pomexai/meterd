@@ -16,6 +16,7 @@ POST /v1/events
 | `tenant_id` | string | The business unit the request was made for. |
 | `model` | string | Model name, as on the price list. |
 | `input_tokens` | integer | Prompt tokens of the request as reported by the upstream, **including** any tokens the upstream served from its prompt cache. |
+| `cached_tokens` | integer, optional | Prompt tokens the upstream served from its prompt cache. They are part of `input_tokens`, not in addition to it. Defaults to 0. Billed at the cached rate. |
 | `output_tokens` | integer | Completion tokens. |
 | `occurred_at` | RFC 3339 timestamp | When the upstream request completed. |
 

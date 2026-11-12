@@ -51,6 +51,7 @@ func (a *Aggregator) Record(e store.Event) {
 	u.TenantID, u.BillingDay, u.Model = e.TenantID, e.BillingDay, e.Model
 	u.Requests++
 	u.InputTokens += e.InputTokens
+	u.CachedTokens += e.CachedTokens
 	u.OutputTokens += e.OutputTokens
 	u.CostMicros += e.CostMicros
 	a.pending[k] = u
